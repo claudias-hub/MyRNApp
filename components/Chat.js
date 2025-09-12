@@ -3,27 +3,31 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform } from 'react-native';
 
+// Chat screen component displaying messages and input box
 const Chat = ({ route }) => {
-  const { name, color } = route.params;
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
-  const flatListRef = useRef();
+  const { name, color } = route.params;  // get user name and chosen background color from navigation params
+  const [messages, setMessages] = useState([]); // array of chat messages
+  const [input, setInput] = useState('');  // current text input value
+  const flatListRef = useRef();  // ref to FlatList for scrolling
 
-  // Add a new message
+
+ // Function to add a new message to the chat
   const sendMessage = () => {
-    if (input.trim() === '') return;
+    if (input.trim() === '') return;  // ignore empty messages
 
     const newMessage = {
-      id: Date.now().toString(),
+      id: Date.now().toString(),  // unique id based on timestamp
       text: input,
       sender: name,
       timestamp: new Date(),
     };
 
+    // Append new message to messages array and clear input
     setMessages(prevMessages => [...prevMessages, newMessage]);
     setInput('');
   };
 
+  // Format timestamp to HH:mm string
   const formatTime = (date) => {
     const d = new Date(date);
     const hours = d.getHours().toString().padStart(2, '0');
@@ -31,14 +35,14 @@ const Chat = ({ route }) => {
     return `${hours}:${minutes}`;
   };
 
-  // Scroll to bottom when messages change
+  // Scroll to bottom whenever messages change
   useEffect(() => {
     if (messages.length > 0) {
       flatListRef.current.scrollToEnd({ animated: true });
     }
   }, [messages]);
 
-  // Render each message
+  // Render each message bubble
   const renderItem = ({ item }) => (
     <View style={[styles.messageContainer, item.sender === name ? styles.myMessage : styles.otherMessage]}>
       <Text style={[styles.messageText, item.sender !== name && styles.otherMessageText]}>{item.text}</Text>
@@ -53,6 +57,7 @@ const Chat = ({ route }) => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={90}
     >
+      {/* List of messages */}
       <FlatList
         ref={flatListRef}
         data={messages}
@@ -61,6 +66,7 @@ const Chat = ({ route }) => {
         contentContainerStyle={styles.messagesList}
       />
 
+      {/* Input box and send button */}
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}

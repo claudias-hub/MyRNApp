@@ -9,11 +9,14 @@ import Chat from './components/Chat';
 
 const Stack = createStackNavigator();
 
+// Main App component that sets up navigation between Start and Chat screens
 const App = () =>{
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Start">
+        {/* Start screen where user enters name and picks color */}
         <Stack.Screen name="Start" component={Start} />
+        {/* Chat screen showing messages; header title shows user's name */}
         <Stack.Screen 
         name="Chat" 
         component={Chat} 

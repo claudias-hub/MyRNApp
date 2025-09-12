@@ -3,17 +3,20 @@
 import { useState } from 'react';
 import { StyleSheet, View, Text, Button, TextInput, ImageBackground, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 
+// Predefined background color options for chat screen
 const colors = ['#090C08', '#474056', '#8A95A5', '#B9C6AE'];
 
+// Start screen component where user enters name and picks chat background color
 const Start = ({ navigation }) => {
-  const [name, setName] = useState('');
-  const [selectedColor, setSelectedColor] = useState(colors[0]);
+  const [name, setName] = useState('');  // user name input state
+  const [selectedColor, setSelectedColor] = useState(colors[0]);  // selected background color state
 
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
 >
+    {/* Background image with dark overlay */}
     <ImageBackground
       source={require('../assets/frank-leuderalbert-PfUw6vlPc3M-unsplash.jpg')} // your background image path
       style={styles.background}
@@ -22,6 +25,7 @@ const Start = ({ navigation }) => {
       <View style={styles.overlay}>
         <View style={styles.container}>
           <Text style={styles.title}>Welcome to Chat App!</Text>
+          {/* Text input for user to enter their name */}
           <TextInput
             style={styles.textInput}
             value={name}
@@ -30,6 +34,7 @@ const Start = ({ navigation }) => {
             placeholderTextColor="#137aa3ff"
           />
           <Text style={styles.colorText}>Choose Background Color:</Text>
+          {/* Color picker buttons */}
             <View style={styles.colorOptions}>
               {colors.map((color) => (
                 <TouchableOpacity
@@ -44,10 +49,11 @@ const Start = ({ navigation }) => {
               ))}
             </View>
 
+          {/* Button to navigate to Chat screen with name and color params */}
           <TouchableOpacity
             style={styles.button}
             onPress={() => navigation.navigate('Chat', { name, color: selectedColor })}
-            disabled={!name.trim()}
+            disabled={!name.trim()}  // disable if name is empty
           >
             <Text style={styles.buttonText}>Go to Chat-Room</Text>
           </TouchableOpacity>
