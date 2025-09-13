@@ -7,6 +7,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import Start from './components/Start';
 import Chat from './components/Chat';
 
+
 const Stack = createStackNavigator();
 
 // Main App component that sets up navigation between Start and Chat screens
