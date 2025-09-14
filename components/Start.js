@@ -32,6 +32,9 @@ const Start = ({ navigation }) => {
             onChangeText={setName}
             placeholder='Type your username here'
             placeholderTextColor="#137aa3ff"
+            accessible={true}
+            accessibilityLabel="Username input"
+            accessibilityHint="Enter your username here to join the chat"
           />
           <Text style={styles.colorText}>Choose Background Color:</Text>
           {/* Color picker buttons */}
@@ -54,6 +57,10 @@ const Start = ({ navigation }) => {
             style={styles.button}
             onPress={() => navigation.navigate('Chat', { name, color: selectedColor })}
             disabled={!name.trim()}  // disable if name is empty
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Go to chat room"
+            accessibilityHint="Navigates to the chat screen with your username and selected background color"
           >
             <Text style={styles.buttonText}>Go to Chat-Room</Text>
           </TouchableOpacity>
