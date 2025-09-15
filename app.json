@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.claudias-hub.myrnapp"
+      "bundleIdentifier": "com.claudiashub.myrnapp"
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +22,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.claudias-hub.myrnapp"
+      "package": "com.claudiashub.myrnapp"
     },
     "web": {
       "favicon": "./assets/favicon.png"
