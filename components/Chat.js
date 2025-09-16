@@ -8,6 +8,7 @@ import {
   Text,
 } from 'react-native';
 import { GiftedChat, Bubble, Actions, SystemMessage } from 'react-native-gifted-chat';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Chat screen component: paste/replace this file at components/Chat.js
 const Chat = ({ route }) => {
@@ -98,21 +99,24 @@ const Chat = ({ route }) => {
   );
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: color || '#ffffff' }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0} // adjust offset if needed
-    >
-      <GiftedChat
-        messages={messages}
-        onSend={(msgs) => onSend(msgs)}
-        user={{ _id: 1, name }}
-        renderBubble={renderBubble}
-        renderActions={renderActions} // optional; remove if you don't want action button yet
-        keyboardShouldPersistTaps="never"
-        renderSystemMessage={renderSystemMessage} // custom system message rendering
-      />
-    </KeyboardAvoidingView>
+    <SafeAreaView style={{ flex: 1, backgroundColor: color || '#fff' }}>
+      <KeyboardAvoidingView
+        style={[styles.container, { backgroundColor: color || '#ffffff' }]}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 80} // adjust offset if needed
+      >
+        <GiftedChat
+          style={{ flex: 1 }}
+          messages={messages}
+          onSend={(msgs) => onSend(msgs)}
+          user={{ _id: 1, name }}
+          renderBubble={renderBubble}
+          renderActions={renderActions} // optional; remove if you don't want action button yet
+          keyboardShouldPersistTaps="handled"
+          renderSystemMessage={renderSystemMessage} // custom system message rendering
+        />
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
