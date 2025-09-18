@@ -16,7 +16,7 @@ const App = () =>{
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Start">
         {/* Start screen where user enters name and picks color */}
-        <Stack.Screen name="MyRNApp" component={Start} />
+        <Stack.Screen name="Start" component={Start} options={{ title: 'MyRNApp'}}/>
         {/* Chat screen showing messages; header title shows user's name */}
         <Stack.Screen 
         name="Chat" 

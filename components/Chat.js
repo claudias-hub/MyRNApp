@@ -74,22 +74,12 @@ const Chat = ({ route }) => {
   const renderActions = (props) => (
     <Actions
       {...props}
+      accessibilityLabel="More options"
+      accessibilityHint="Lets you choose to send an image or your geolocation."
+      accessibilityRole="button"
       icon={() => (
-        <TouchableOpacity
-          accessible={true}
-          accessibilityRole="button"
-          accessibilityLabel="More options"
-          accessibilityHint="Opens options to send an image or your location."
-          onPress={() => {
-            // placeholder: show action or open image picker later
-            console.log('Action button pressed');
-          }}
-          style={styles.actionButton}
-        >
-          <Text style={styles.actionText}>+</Text>
-        </TouchableOpacity>
+        <Text style={styles.actionText}>+</Text>  // Just the icon, no TouchableOpacity here
       )}
-      // If you want TouchableOpacity to handle press, prevent default Actions menu:
       options={{
         'Send Image': () => console.log('Send Image pressed'),
         Cancel: () => {},
@@ -99,26 +89,21 @@ const Chat = ({ route }) => {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: color || '#fff' }}>
-      <KeyboardAvoidingView
-        style={[styles.container, { backgroundColor: color || '#ffffff' }]}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 80} // adjust offset if needed
-      >
-        <GiftedChat
-          style={{ flex: 1 }}
-          messages={messages}
-          onSend={(msgs) => onSend(msgs)}
-          user={{ _id: 1, name }}
-          renderBubble={renderBubble}
-          renderActions={renderActions} // optional; remove if you don't want action button yet
-          keyboardShouldPersistTaps="handled"
-          renderSystemMessage={renderSystemMessage} // custom system message rendering
-        />
-      </KeyboardAvoidingView>
-    </SafeAreaView>
-  );
-};
+  <SafeAreaView style={{ flex: 1, backgroundColor: color || '#fff' }}>
+    <View style={{ flex: 1 }}>
+      <GiftedChat
+        messages={messages}
+        onSend={(msgs) => onSend(msgs)}
+        user={{ _id: 1, name }}
+        renderBubble={renderBubble}
+        renderActions={renderActions}
+        keyboardShouldPersistTaps="handled"
+        renderSystemMessage={renderSystemMessage}
+      />
+      {Platform.OS === 'android' ? <KeyboardAvoidingView behavior="height" /> : null}
+    </View>
+  </SafeAreaView>
+)};
 
 const styles = StyleSheet.create({
   container: { flex: 1 },

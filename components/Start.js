@@ -24,7 +24,9 @@ const Start = ({ navigation }) => {
     >
       <View style={styles.overlay}>
         <View style={styles.container}>
-          <Text style={styles.title}>Welcome to Chat App!</Text>
+          <Text style={styles.title} accessibilityRole="header">
+            Welcome to Chat App!
+          </Text>
           {/* Text input for user to enter their name */}
           <TextInput
             style={styles.textInput}
@@ -35,10 +37,16 @@ const Start = ({ navigation }) => {
             accessible={true}
             accessibilityLabel="Username input"
             accessibilityHint="Enter your username here to join the chat"
+            accessibilityRole="text"
+            accessibilityState={{ invalid: !name.trim() }}
           />
           <Text style={styles.colorText}>Choose Background Color:</Text>
           {/* Color picker buttons */}
-            <View style={styles.colorOptions}>
+            <View style={styles.colorOptions}
+            accessible={true}
+            accessibilityRole="radiogroup"
+            accessibilityLiveRegion="polite"
+         >
               {colors.map((color) => (
                 <TouchableOpacity
                   key={color}
@@ -48,6 +56,11 @@ const Start = ({ navigation }) => {
                     selectedColor === color && styles.colorCircleSelected,
                   ]}
                   onPress={() => setSelectedColor(color)}
+                  accessible={true}
+                  accessibilityRole="radio"
+                  accessibilityLabel={`Select background color ${color}`}
+                  accessibilityState={{ selected: selectedColor === color }}
+                  accessibilityHint="Select this color as your chat background"
                 />
               ))}
             </View>
@@ -57,6 +70,7 @@ const Start = ({ navigation }) => {
             style={styles.button}
             onPress={() => navigation.navigate('Chat', { name, color: selectedColor })}
             disabled={!name.trim()}  // disable if name is empty
+            accessibilityState={{ disabled: !name.trim() }}
             accessible={true}
             accessibilityRole="button"
             accessibilityLabel="Go to chat room"
