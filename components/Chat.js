@@ -3,14 +3,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { KeyboardAvoidingView, StyleSheet, Platform, Text, Alert } from 'react-native';
 import { GiftedChat, Bubble, Actions, SystemMessage, InputToolbar } from 'react-native-gifted-chat';
-import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from "firebase/firestore";
+import { db } from '../firebase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 // Chat screen — all users see and write in this one room
-const Chat = ({ route, navigation, db }) => {
+const Chat = ({ route, navigation, isConnected }) => {
+  
   // Route params (set in Start.js)
-  const { userId, name = "Anonymous", color = "#fff" } = route.params || {};
-  const insets = useSafeAreaInsets();
+  const { userId= "unknown", name = "Anonymous", color = "#fff" } = route.params || {};
 
   // State: all messages loaded from Firestore
   const [messages, setMessages] = useState([]);
@@ -20,35 +23,61 @@ const Chat = ({ route, navigation, db }) => {
     navigation.setOptions({ title: name || "Chat" });
   }, [name, navigation]);
 
-  // Subscribe in real-time to messages collection
-  useEffect(() => {
-    const q = query(collection(db, "messages"), orderBy("createdAt", "desc"));
-
-    const unsubscribe = onSnapshot(
-      q,
-      (querySnapshot) => {
-        const messagesFirestore = [];
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          messagesFirestore.push({
-            _id: doc.id,
-            text: data.text,
-            // Firestore Timestamp → JS Date for GiftedChat
-            createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
-            user: data.user,
-          });
-        });
-        setMessages(messagesFirestore);
-      },
-      (error) => {
-        console.error("Error fetching messages: ", error);
-        Alert.alert("Failed to load messages. Please check your connection.");
+  // Load cached messages first
+  const loadCachedMessages = async () => {
+    try {
+      const cachedMessages = await AsyncStorage.getItem("messages");
+      if (cachedMessages) {
+        setMessages(JSON.parse(cachedMessages));
       }
-    );
+    } catch (error) {
+      console.error("Error loading cached messages: ", error);
+    }
+  };
 
-    // Clean up listener on unmount
-    return () => unsubscribe();
-  }, []);
+  // Save messages locally whenever they change
+  useEffect(() => {
+    const saveMessages = async () => {
+      try {
+        await AsyncStorage.setItem("messages", JSON.stringify(messages));
+      } catch (error) {
+        console.error("Error saving messages: ", error);
+      }
+    };
+    if (messages.length > 0) saveMessages();
+  }, [messages]);
+
+  // Subscribe in real-time to messages collection
+    useEffect(() => {
+      let unsubscribe;
+
+      if (isConnected) {
+        const q = query(collection(db, "messages"), orderBy("createdAt", "desc"));
+        unsubscribe = onSnapshot(q, async (querySnapshot) => {
+          const newMessages = querySnapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+              _id: doc.id,
+              text: data.text,
+              createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
+              user: data.user,
+            };
+          });
+          setMessages(newMessages);
+          try {
+            await AsyncStorage.setItem("messages", JSON.stringify(newMessages));
+          } catch (e) {
+            console.log("Failed to save messages", e);
+          }
+        });
+      } else {
+        loadCachedMessages();
+      }
+
+      return () => {
+        if (unsubscribe) unsubscribe();
+      };
+    }, [isConnected]);
 
   // Called when user sends a new message → save to Firestore
   const onSend = useCallback(async (newMessages = []) => {
@@ -61,17 +90,18 @@ const Chat = ({ route, navigation, db }) => {
       console.error("Error sending message: ", error);
       Alert.alert("Failed to send message. Please try again.");
     }
-  }, [name, color]);
+  }, []);
 
   // Customize bubbles: use background color per-user or side
   const renderBubble = (props) => {
-    const { currentMessage } = props;
-    const bubbleColor = currentMessage.user.color || (props.position === 'right' ? '#137aa3' : '#f0f0f0');
-    const textColor = currentMessage.user.color ? '#fff' : (props.position === 'right' ? '#fff' : '#000');
+    const { key, ...rest } = props; // strip key
+    const { currentMessage } = rest;
+    const bubbleColor = currentMessage?.user?.color || (rest.position === 'right' ? '#137aa3' : '#f0f0f0');
+    const textColor = currentMessage?.user?.color ? '#fff' : (rest.position === 'right' ? '#fff' : '#000');
 
     return (
       <Bubble
-        {...props}
+        {...rest}  // no key here anymore
         wrapperStyle={{
           right: { backgroundColor: bubbleColor },
           left: { backgroundColor: bubbleColor },
@@ -85,39 +115,41 @@ const Chat = ({ route, navigation, db }) => {
   };
 
   // Custom action button (placeholder for future features e.g. send image)
-  const renderActions = (props) => (
-    <Actions
-      {...props}
-      accessibilityLabel="More options"
-      accessibilityHint="Lets you choose to send an image or your geolocation."
-      accessibilityRole="button"
-      icon={() => <Text style={styles.actionText}>+</Text>}
-      options={{
-        'Send Image': () => console.log('Send Image pressed'),
-        Cancel: () => {},
-      }}
-    />
-  );
+  const renderActions = (props) => {
+    const { key, ...rest } = props; // strip key
+    return (
+      <Actions
+        {...rest}
+        accessibilityLabel="More options"
+        accessibilityHint="Lets you choose to send an image or your geolocation."
+        accessibilityRole="button"
+        icon={() => <Text style={styles.actionText}>+</Text>}
+        options={{
+          'Send Image': () => console.log('Send Image pressed'),
+          Cancel: () => {},
+        }}
+      />
+    );
+  };
 
   // Custom system message style
-  const renderSystemMessage = (props) => (
-    <SystemMessage
-      {...props}
-      wrapperStyle={{ backgroundColor: 'transparent' }}
-      textStyle={{ color: '#fff', fontWeight: 'bold' }}
-    />
-  );
+  const renderSystemMessage = (props) => {
+    const { key, ...rest } = props; // strip key
+    return (
+      <SystemMessage
+        {...rest}
+        wrapperStyle={{ backgroundColor: 'transparent' }}
+        textStyle={{ color: '#fff', fontWeight: 'bold' }}
+      />
+    );
+  };
 
   // Custom input toolbar with Android-specific spacing
-  const renderInputToolbar = (props) => (
-    <InputToolbar
-      {...props}
-      containerStyle={{
-        paddingBottom: Platform.OS === 'android' ? 10 : 0,
-        marginBottom: Platform.OS === 'android' ? 0 : 0,
-      }}
-    />
-  );
+  const renderInputToolbar = (props) => {
+    const { key, ...rest } = props; // strip key
+    if (isConnected) return <InputToolbar {...rest} />;
+    return null;
+  };
 
   // Main render
   return (

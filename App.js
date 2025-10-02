@@ -1,9 +1,12 @@
 // App.js //
 
-import React from "react";
+import React, { useEffect } from "react";
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { BackHandler } from "react-native";
+import { BackHandler, Alert, StatusBar } from "react-native";
+import { useNetInfo } from "@react-native-community/netinfo";
+import { getFirestore, disableNetwork, enableNetwork } from "firebase/firestore";
+import SystemNavigationBar from "react-native-system-navigation-bar";
 
 // Import app screens/components
 import Welcome from "./components/Welcome";
@@ -24,6 +27,24 @@ const Stack = createStackNavigator();
 
 // Root App component manages navigation between screens
 const App = () => {
+  const connectionStatus = useNetInfo();
+
+  // Set light status bar and navigation bar colors
+  useEffect(() => {
+    StatusBar.setBarStyle('dark-content'); // or 'light-content'
+    SystemNavigationBar.setNavigationColor('#ffffff', 'dark'); 
+  }, []);
+
+  // Monitor connection status and enable/disable Firestore network accordingly
+  useEffect(() => {
+    if (connectionStatus.isConnected === false) {
+      Alert.alert("Connection lost!");
+      disableNetwork(db);
+    } else if (connectionStatus.isConnected === true) {
+      enableNetwork(db);
+    }
+  }, [connectionStatus.isConnected]);
+
   return (
     <NavigationContainer>
       {/* Define available screens */}
@@ -38,12 +59,12 @@ const App = () => {
         {/* Chat screen - receives user info via route params */}
         <Stack.Screen 
           name="Chat"
-          options={{
+          options={({ route }) => ({
             windowSoftInputMode: 'adjustPan',
-            title: 'Chat'
-          }}
+            title: route.params?.name || 'Chat',
+          })}
         >
-          {(props) => <Chat {...props} db={db} />}
+          {props => <Chat {...props} isConnected={connectionStatus.isConnected} />}
         </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>
