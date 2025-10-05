@@ -13,6 +13,7 @@ import {
   FIREBASE_APP_ID, 
   FIREBASE_MEASUREMENT_ID 
 } from '@env';
+import { getStorage } from "firebase/storage";
 
 
 const firebaseConfig = {
@@ -33,6 +34,8 @@ const auth = initializeAuth(app, {
   persistence: getReactNativePersistence(AsyncStorage),
 });
 
+const storage = getStorage(app);
+
 // Export initialized instances for use in other files
-export { app, db, auth };
+export { app, db, auth, storage };
 export default firebaseConfig;

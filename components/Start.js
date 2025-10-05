@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, TextInput, ImageBackground, KeyboardAvoidingView, Platform, Alert } from 'react-native';
-import { signInAnonymously } from "firebase/auth";
 import { auth } from '../firebase';   // pre-initialized getAuth() from firebase.js
 
 // Predefined color swatches for chat background
@@ -19,19 +18,15 @@ const Start = ({ navigation }) => {
   const onStartChatting = () => {
     if (!name.trim()) return; // Prevent empty usernames
     
-    // Log user in anonymously with Firebase Auth
-    // "auth" here was created using getAuth(app) in firebase.js
-    signInAnonymously(auth)
-      .then((result) => {
-        navigation.navigate('Chat', {
-          userId: result.user.uid,
-          name,
-          color: selectedColor,
-        });
-      })
-      .catch(() => {
-        Alert.alert("Unable to sign in anonymously. Please try again later.");
-      });
+    // We assume the app-level auth listener already signed in anonymously.
+    // To get the current uid, you can read it from auth.currentUser.
+    const uid = auth.currentUser?.uid || "unknown";
+
+    navigation.navigate('Chat', {
+      userId: uid,
+      name,
+      color: selectedColor,
+    });
   };
 
   return (

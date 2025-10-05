@@ -1,4 +1,4 @@
-// Chat.js: Displays chat messages and syncs them with Firestore in real-time
+// components/Chat.js //// Chat.js: Displays chat messages and syncs them with Firestore in real-time
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { KeyboardAvoidingView, StyleSheet, Platform, Text, Alert } from 'react-native';
@@ -7,10 +7,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from '../firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import CustomActions from './CustomActions';
+import MapView from 'react-native-maps';
 
 // Chat screen — all users see and write in this one room
-const Chat = ({ route, navigation, isConnected }) => {
+const Chat = ({ route, navigation, isConnected, storage }) => {
   
   // Route params (set in Start.js)
   const { userId= "unknown", name = "Anonymous", color = "#fff" } = route.params || {};
@@ -51,16 +52,18 @@ const Chat = ({ route, navigation, isConnected }) => {
     useEffect(() => {
       let unsubscribe;
 
-      if (isConnected) {
+      if (isConnected && userId && userId !== "unknown") {
         const q = query(collection(db, "messages"), orderBy("createdAt", "desc"));
         unsubscribe = onSnapshot(q, async (querySnapshot) => {
           const newMessages = querySnapshot.docs.map(doc => {
             const data = doc.data();
             return {
               _id: doc.id,
-              text: data.text,
+              text: data.text || "",
               createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
               user: data.user,
+              image: data.image || null,       
+              location: data.location || null,
             };
           });
           setMessages(newMessages);
@@ -70,14 +73,12 @@ const Chat = ({ route, navigation, isConnected }) => {
             console.log("Failed to save messages", e);
           }
         });
-      } else {
+      } else if (!isConnected){
         loadCachedMessages();
       }
 
-      return () => {
-        if (unsubscribe) unsubscribe();
-      };
-    }, [isConnected]);
+      return () => unsubscribe && unsubscribe();
+    }, [isConnected, userId]);
 
   // Called when user sends a new message → save to Firestore
   const onSend = useCallback(async (newMessages = []) => {
@@ -115,22 +116,10 @@ const Chat = ({ route, navigation, isConnected }) => {
   };
 
   // Custom action button (placeholder for future features e.g. send image)
-  const renderActions = (props) => {
-    const { key, ...rest } = props; // strip key
-    return (
-      <Actions
-        {...rest}
-        accessibilityLabel="More options"
-        accessibilityHint="Lets you choose to send an image or your geolocation."
-        accessibilityRole="button"
-        icon={() => <Text style={styles.actionText}>+</Text>}
-        options={{
-          'Send Image': () => console.log('Send Image pressed'),
-          Cancel: () => {},
-        }}
-      />
-    );
+  const renderCustomActions = (props) => {
+    return <CustomActions {...props} storage={storage} userId={userId} />;
   };
+
 
   // Custom system message style
   const renderSystemMessage = (props) => {
@@ -151,6 +140,24 @@ const Chat = ({ route, navigation, isConnected }) => {
     return null;
   };
 
+  const renderCustomView = (props) => {
+    const { currentMessage } = props;
+    if (currentMessage.location) {
+      return (
+        <MapView
+          style={{ width: 150, height: 100, borderRadius: 13, margin: 3 }}
+          region={{
+            latitude: currentMessage.location.latitude,
+            longitude: currentMessage.location.longitude,
+            latitudeDelta: 0.0922,
+            longitudeDelta: 0.0421,
+          }}
+        />
+      );
+    }
+    return null;
+  };
+
   // Main render
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: color || '#fff' }}>
@@ -164,7 +171,8 @@ const Chat = ({ route, navigation, isConnected }) => {
           onSend={onSend}
           user={{ _id: userId, name }} // identify logged-in user
           renderBubble={renderBubble}
-          renderActions={renderActions}
+          renderActions={renderCustomActions}
+          renderCustomView={renderCustomView}
           renderSystemMessage={renderSystemMessage}
           renderInputToolbar={renderInputToolbar}
           alwaysShowSend={true}

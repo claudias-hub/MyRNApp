@@ -6,6 +6,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { BackHandler, Alert, StatusBar } from "react-native";
 import { useNetInfo } from "@react-native-community/netinfo";
 import { getFirestore, disableNetwork, enableNetwork } from "firebase/firestore";
+import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
 import SystemNavigationBar from "react-native-system-navigation-bar";
 
 // Import app screens/components
@@ -14,7 +15,7 @@ import Start from "./components/Start";
 import Chat from "./components/Chat";
    
 // Firestore db instance (initialized in firebase.js)
-import { db } from "./firebase"; 
+import { db, storage, auth } from "./firebase"; 
 
 // Patch BackHandler to support old removeEventListener calls
 if (!BackHandler.removeEventListener) {
@@ -45,6 +46,19 @@ const App = () => {
     }
   }, [connectionStatus.isConnected]);
 
+  useEffect(() => {
+    const sub = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        try {
+          await signInAnonymously(auth);
+        } catch (e) {
+          console.log("Anonymous sign-in failed:", e);
+        }
+      }
+    });
+    return () => sub();
+  }, []);
+
   return (
     <NavigationContainer>
       {/* Define available screens */}
@@ -64,7 +78,13 @@ const App = () => {
             title: route.params?.name || 'Chat',
           })}
         >
-          {props => <Chat {...props} isConnected={connectionStatus.isConnected} />}
+          {props => (
+            <Chat 
+              {...props} 
+              isConnected={connectionStatus.isConnected} 
+              storage={storage}   
+            />
+          )}
         </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>
