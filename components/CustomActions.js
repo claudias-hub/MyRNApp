@@ -1,15 +1,21 @@
 // components/CustomActions.js //
+// Renders the "+" button in Gifted Chat to send images or location.
+// Handles image picking, camera capture, upload to Firebase Storage,
+// and sending a message with the resulting image URL.
 
 import { TouchableOpacity, View, Text, StyleSheet, Alert } from "react-native";
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { useRef } from 'react';
+
 
 const CustomActions = ({ wrapperStyle, iconTextStyle, onSend, storage, userId }) => {
   const actionSheet = useActionSheet();
+  const isUploadingRef = useRef(false);
 
-  // Generate unique reference string for uploaded images
+  // Generate unique reference string for uploaded images// Avoid filename collisions; tie uploads to user + timestamp
   const generateReference = (uri) => {
     const timeStamp = (new Date()).getTime();
     const imageName = uri.split("/")[uri.split("/").length - 1];
@@ -17,25 +23,20 @@ const CustomActions = ({ wrapperStyle, iconTextStyle, onSend, storage, userId })
   };
 
   
-  // Upload image to Firebase Storage and send as message
+  // Upload a local image file to Cloud Storage and send its URL as a message
   const uploadAndSendImage = async (imageURI) => {
+    if (isUploadingRef.current)return; // Prevent double-taps
+    isUploadingRef.current = true;
     try {
       console.log("Starting upload for:", imageURI);
-
       const uniqueRefString = generateReference(imageURI);
-      console.log("Firebase ref:", uniqueRefString);
-
       const newUploadRef = ref(storage, uniqueRefString);
 
       const response = await fetch(imageURI);
       const blob = await response.blob();
-      console.log("Blob size:", blob.size);
 
       const snapshot = await uploadBytes(newUploadRef, blob);
-      console.log("Upload snapshot:", snapshot.metadata);
-
       const imageURL = await getDownloadURL(snapshot.ref);
-      console.log("Image URL:", imageURL);
 
       const imageMessage = {
         _id: new Date().getTime().toString(),
@@ -45,23 +46,15 @@ const CustomActions = ({ wrapperStyle, iconTextStyle, onSend, storage, userId })
         image: imageURL,
       };
 
-      onSend([imageMessage]); // ✅ wrap in array!
+      onSend([imageMessage]);
     } catch (error) {
       console.error("Full upload error object:", JSON.stringify(error, null, 2));
-
-      if (error.code && error.code.includes("storage/")) {
-        Alert.alert(
-          "Upload Error",
-          `Firebase Storage error: ${error.code}`
-        );
-      } else {
-        Alert.alert(
-          "Error uploading or sending image",
-          error.message || "Unknown failure"
-        );
-      }
+      Alert.alert("Upload Error", error.code || error.message || "Unknown");
+    } finally {
+      isUploadingRef.current = false;
     }
   };
+  
   // Pick an image from library
   const pickImage = async () => {
     let permissions = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -90,7 +83,7 @@ const CustomActions = ({ wrapperStyle, iconTextStyle, onSend, storage, userId })
     }
   };
 
-  // Get user's location
+  // Send current location; Gifted Chat renders with renderCustomView
   const getLocation = async () => {
     let permissions = await Location.requestForegroundPermissionsAsync();
     
@@ -122,19 +115,23 @@ const CustomActions = ({ wrapperStyle, iconTextStyle, onSend, storage, userId })
         cancelButtonIndex,
       },
       async (buttonIndex) => {
-        switch (buttonIndex) {
-          case 0:
-            pickImage();
+        try {
+          if (buttonIndex === 0) {
+            await pickImage();
             return;
-          case 1:
-            takePhoto();
+          }
+          if (buttonIndex === 1) {
+            await takePhoto();
             return;
-          case 2:
-            getLocation();
+          }
+          if (buttonIndex === 2) {
+            await getLocation();
             return;
-          default:
+          }
+        } catch (e) {
+          console.log("Action error:", e);
         }
-      },
+      }
     );
   };
 

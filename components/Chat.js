@@ -1,4 +1,6 @@
-// components/Chat.js //// Chat.js: Displays chat messages and syncs them with Firestore in real-time
+// components/Chat.js 
+// Displays chat messages and syncs with Firestore in real time.
+// Provides image and location sending via CustomActions.
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { KeyboardAvoidingView, StyleSheet, Platform, Text, Alert } from 'react-native';
@@ -13,10 +15,10 @@ import MapView from 'react-native-maps';
 // Chat screen — all users see and write in this one room
 const Chat = ({ route, navigation, isConnected, storage }) => {
   
-  // Route params (set in Start.js)
+  // Inputs passed from Start screen
   const { userId= "unknown", name = "Anonymous", color = "#fff" } = route.params || {};
 
-  // State: all messages loaded from Firestore
+  // Local state for GiftedChat // State: all messages loaded from Firestore
   const [messages, setMessages] = useState([]);
 
   // Set the screen title to the user's name
@@ -48,7 +50,7 @@ const Chat = ({ route, navigation, isConnected, storage }) => {
     if (messages.length > 0) saveMessages();
   }, [messages]);
 
-  // Subscribe in real-time to messages collection
+  // Subscribe to Firestore updates if online; otherwise load from cache
     useEffect(() => {
       let unsubscribe;
 
@@ -80,7 +82,7 @@ const Chat = ({ route, navigation, isConnected, storage }) => {
       return () => unsubscribe && unsubscribe();
     }, [isConnected, userId]);
 
-  // Called when user sends a new message → save to Firestore
+  // Add a new message to Firestore; serverTimestamp ensures consistent ordering
   const onSend = useCallback(async (newMessages = []) => {
     try {
       await addDoc(collection(db, "messages"), {
@@ -93,7 +95,7 @@ const Chat = ({ route, navigation, isConnected, storage }) => {
     }
   }, []);
 
-  // Customize bubbles: use background color per-user or side
+  // Style message bubbles (right vs left)
   const renderBubble = (props) => {
     const { key, ...rest } = props; // strip key
     const { currentMessage } = rest;
@@ -115,13 +117,13 @@ const Chat = ({ route, navigation, isConnected, storage }) => {
     );
   };
 
-  // Custom action button (placeholder for future features e.g. send image)
+  // “+” button actions for media and location
   const renderCustomActions = (props) => {
     return <CustomActions {...props} storage={storage} userId={userId} />;
   };
 
 
-  // Custom system message style
+  // Subtle styling for system messages
   const renderSystemMessage = (props) => {
     const { key, ...rest } = props; // strip key
     return (
@@ -133,13 +135,14 @@ const Chat = ({ route, navigation, isConnected, storage }) => {
     );
   };
 
-  // Custom input toolbar with Android-specific spacing
+  // Hide InputToolbar when offline (disallow composing)
   const renderInputToolbar = (props) => {
     const { key, ...rest } = props; // strip key
     if (isConnected) return <InputToolbar {...rest} />;
     return null;
   };
 
+  // Render a small map view when a message includes location
   const renderCustomView = (props) => {
     const { currentMessage } = props;
     if (currentMessage.location) {

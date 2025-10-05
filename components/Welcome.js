@@ -3,6 +3,9 @@
 import React from "react";
 import { StyleSheet, View, Text, TouchableOpacity } from "react-native";
 
+/**
+ * Simple landing screen to route the user to the Start screen.
+ */
 const Welcome = ({ navigation }) => {
   return (
     <View style={styles.container}>

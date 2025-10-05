@@ -15,7 +15,7 @@ import {
 } from '@env';
 import { getStorage } from "firebase/storage";
 
-
+// All Firebase config comes from .env via @env
 const firebaseConfig = {
   apiKey: FIREBASE_API_KEY,
   authDomain: FIREBASE_AUTH_DOMAIN,
@@ -26,14 +26,18 @@ const firebaseConfig = {
   measurementId: FIREBASE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase app
+// Initialize core app + services once (export singletons)
 const app = initializeApp(firebaseConfig);
-// Initialize services
+
+// Firestore for chat messages
 const db = getFirestore(app);
+
+// Auth with persistent session using React Native AsyncStorage
 const auth = initializeAuth(app, {
   persistence: getReactNativePersistence(AsyncStorage),
 });
 
+// Storage for user-uploaded images
 const storage = getStorage(app);
 
 // Export initialized instances for use in other files

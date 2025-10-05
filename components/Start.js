@@ -4,22 +4,22 @@ import { useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, TextInput, ImageBackground, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { auth } from '../firebase';   // pre-initialized getAuth() from firebase.js
 
-// Predefined color swatches for chat background
-const colors = ['#090C08', '#474056', '#8A95A5', '#B9C6AE'];
+// Palette shown to the user for chat background
+const colors = ['#6b30caff', '#1c885bff', '#8A95A5', '#B9C6AE'];
 
-// Start screen component where user enters name and picks chat background color
+/**
+ * Start screen: user enters a display name and picks a chat background color.
+ * Navigates to Chat with the selected options.
+ */
 const Start = ({ navigation }) => {
   // Controlled state: username text input
   const [name, setName] = useState('');  
   // Controlled state: selected chat background color
   const [selectedColor, setSelectedColor] = useState(colors[0]); 
 
-  // Called when "Go to Chat" is pressed
+  // Proceed to chat only when a non-empty name is provided // Called when "Go to Chat" is pressed
   const onStartChatting = () => {
     if (!name.trim()) return; // Prevent empty usernames
-    
-    // We assume the app-level auth listener already signed in anonymously.
-    // To get the current uid, you can read it from auth.currentUser.
     const uid = auth.currentUser?.uid || "unknown";
 
     navigation.navigate('Chat', {
@@ -40,6 +40,7 @@ const Start = ({ navigation }) => {
       style={styles.background}
       resizeMode="cover"
     >
+      {/* Semi-opaque overlay for text contrast */}
       <View style={styles.overlay}>
         <View style={styles.container}>
 
@@ -48,7 +49,7 @@ const Start = ({ navigation }) => {
             Welcome to Chat App!
           </Text>
 
-          {/* Input field - user types their display name */}
+          {/* Name input with accessibility metadata */}
           <TextInput
             style={styles.textInput}
             value={name}
@@ -64,7 +65,7 @@ const Start = ({ navigation }) => {
 
           {/* Let user choose background color */}
           <Text style={styles.colorText}>Choose Background Color:</Text>
-          {/* Color picker buttons */}
+          {/* Color swatches as a radio group */}
             <View style={styles.colorOptions}
             accessible={true}
             accessibilityRole="radiogroup"

@@ -14,10 +14,10 @@ import Welcome from "./components/Welcome";
 import Start from "./components/Start";
 import Chat from "./components/Chat";
    
-// Firestore db instance (initialized in firebase.js)
+// Firestore singletons (initialized in firebase.js)
 import { db, storage, auth } from "./firebase"; 
 
-// Patch BackHandler to support old removeEventListener calls
+// Ensure legacy BackHandler API continues to work on newer RN versions
 if (!BackHandler.removeEventListener) {
   BackHandler.removeEventListener = (type, handler) => {
     return BackHandler.removeListener?.(type, handler);
@@ -28,15 +28,16 @@ const Stack = createStackNavigator();
 
 // Root App component manages navigation between screens
 const App = () => {
+  // Network connectivity (true/false) and details
   const connectionStatus = useNetInfo();
 
-  // Set light status bar and navigation bar colors
+  // Set status/navigation bar styles on mount
   useEffect(() => {
     StatusBar.setBarStyle('dark-content'); // or 'light-content'
     SystemNavigationBar.setNavigationColor('#ffffff', 'dark'); 
   }, []);
 
-  // Monitor connection status and enable/disable Firestore network accordingly
+  // Toggle Firestore’s network based on connectivity
   useEffect(() => {
     if (connectionStatus.isConnected === false) {
       Alert.alert("Connection lost!");
@@ -46,6 +47,7 @@ const App = () => {
     }
   }, [connectionStatus.isConnected]);
 
+  // Ensure anonymous auth so we always have a user context/uid
   useEffect(() => {
     const sub = onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -70,7 +72,7 @@ const App = () => {
         {/* Start screen - user enters name & picks color */}
         <Stack.Screen name="Start" component={Start} options={{ title: "Start Chat" }} />
 
-        {/* Chat screen - receives user info via route params */}
+        {/* Main chat room */}
         <Stack.Screen 
           name="Chat"
           options={({ route }) => ({
